@@ -132,7 +132,10 @@ function executeTool(name, args, session, flags) {
       return JSON.stringify({ article: key, content: DOCS[key] });
     }
     if (name === 'send_otp') {
-      const code = String(Math.floor(100000 + Math.random() * 900000));
+      // MERCI_TEST_OTP: test-only instrumentation for deterministic local security testing (e.g. isolating
+      // BOLA/authorization experiments from OTP randomness). Unset in normal/production-like runs, where
+      // the OTP stays random as before. Never exposed in the tool result or HTTP response either way.
+      const code = process.env.MERCI_TEST_OTP || String(Math.floor(100000 + Math.random() * 900000));
       session.otp = code; // stored server-side; delivered to the phone, NOT returned here
       return JSON.stringify({ status: 'sent', channel: 'sms', to: 'registered phone on file' });
     }
