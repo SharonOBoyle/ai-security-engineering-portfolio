@@ -101,9 +101,27 @@ async function main() {
     console.log(`  ${c.bold('episode ' + ep)}  ${c.dim('plan→')} family ${c.b(strategy.family)}  ${c.dim('strategy→')} ${c.bold(strategy.id)}`);
     console.log(c.dim(`  ${strategy.title}  [${strategy.owaspLLM}]`));
 
+    // PRECONDITION — BOLA-ESCALATION's 4th turn needs a real OTP to complete the transfer attempt. A
+    // missing MERCI_TEST_OTP means the test setup is incomplete, not that MerciBank held — skip before
+    // sending anything, and record it distinctly from a normal miss.
+    let attackStrategy = strategy;
+    if (strategy.id === 'BOLA-ESCALATION') {
+      if (!process.env.MERCI_TEST_OTP) {
+        console.log(c.r(`  ✗ precondition failed — MERCI_TEST_OTP is not set; skipping (not a HELD result)`));
+        mem.journal(`SKIPPED ${strategy.id} — missing MERCI_TEST_OTP (unmet test precondition)`);
+        done.add(strategy.id);
+        continue;
+      }
+      // BOLA-specific: substitute the validated OTP into the {{TEST_OTP}} marker before it's sent.
+      attackStrategy = {
+        ...strategy,
+        followups: strategy.followups.map((f) => f.replace('{{TEST_OTP}}', process.env.MERCI_TEST_OTP)),
+      };
+    }
+
     // ATTACK + JUDGE
     let result;
-    try { result = await attack(strategy); }
+    try { result = await attack(attackStrategy); }
     catch (e) { console.log(c.r(`  attack error: ${e.message}`)); done.add(strategy.id); continue; }
 
     // REINFORCE — update the planner, memory, and (on a hit) write a candidate finding.
