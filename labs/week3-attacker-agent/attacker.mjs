@@ -15,7 +15,7 @@
 
 import './lib/env.mjs';
 import { Conversation, health, sleep, targetInfo } from './lib/target.mjs';
-import { STRATEGIES, FAMILIES, byFamily } from './lib/strategies.mjs';
+import { STRATEGIES, FAMILIES, byFamily, byId } from './lib/strategies.mjs';
 import { judge, impactOf } from './lib/judge.mjs';
 import { pickFamily, record, summarize } from './lib/planner.mjs';
 import * as mem from './lib/memory.mjs';
@@ -24,6 +24,15 @@ import * as llm from './lib/llm.mjs';
 const EPISODES = Number(process.env.EPISODES || 9);
 const MAX_TURNS = Number(process.env.MAX_TURNS || 4);
 const DELAY = Number(process.env.ATTACK_DELAY_MS || 600);
+
+// Pin the campaign to ONE strategy, e.g. STRATEGY_ID=BOLA-ESCALATION node attacker.mjs — fails fast
+// on a bad id rather than silently running zero episodes or falling back to the full campaign.
+const STRATEGY_ID = process.env.STRATEGY_ID;
+const ONLY = STRATEGY_ID ? byId(STRATEGY_ID) : null;
+if (STRATEGY_ID && !ONLY) {
+  console.error(`\n  Unknown STRATEGY_ID "${STRATEGY_ID}". Check the id in lib/strategies.mjs.\n`);
+  process.exit(1);
+}
 
 const c = { g: (s) => `\x1b[32m${s}\x1b[0m`, r: (s) => `\x1b[31m${s}\x1b[0m`, y: (s) => `\x1b[33m${s}\x1b[0m`,
   b: (s) => `\x1b[36m${s}\x1b[0m`, dim: (s) => `\x1b[2m${s}\x1b[0m`, bold: (s) => `\x1b[1m${s}\x1b[0m` };
@@ -60,6 +69,7 @@ async function attack(strategy) {
 async function main() {
   console.log(c.bold('\n  MerciBank attacker agent — Day 5 campaign'));
   console.log(c.dim(`  target: ${targetInfo.url}   attacker-model: ${llm.available() ? c.g(llm.info().model) : c.y('none (static ladders)')}`));
+  if (ONLY) console.log(c.dim(`  strategy pinned via STRATEGY_ID: ${c.b(ONLY.id)}`));
 
   // WAKE — fail fast if the target isn't up, and load memory.
   let h;
@@ -72,15 +82,20 @@ async function main() {
   const found = [];
   mem.journal(`campaign start · target model ${h.model} · attacker ${llm.available() ? llm.info().model : 'static'}`);
 
-  for (let ep = 1; ep <= EPISODES; ep++) {
+  for (let ep = 1; ep <= (ONLY ? 1 : EPISODES); ep++) {
     // ORIENT
     const remaining = STRATEGIES.filter((s) => !done.has(s.id));
     if (!remaining.length) { console.log(c.dim('  (every strategy attempted — stopping early)')); break; }
 
-    // PLAN — UCB picks a family; take its first not-yet-done strategy (fall back across families).
-    const liveFamilies = FAMILIES.filter((f) => byFamily(f).some((s) => !done.has(s.id)));
-    const { family } = pickFamily(register, liveFamilies);
-    const strategy = byFamily(family).find((s) => !done.has(s.id)) || remaining[0];
+    // PLAN — UCB picks a family, unless a single strategy was pinned via STRATEGY_ID.
+    let strategy;
+    if (ONLY) {
+      strategy = ONLY;
+    } else {
+      const liveFamilies = FAMILIES.filter((f) => byFamily(f).some((s) => !done.has(s.id)));
+      const { family } = pickFamily(register, liveFamilies);
+      strategy = byFamily(family).find((s) => !done.has(s.id)) || remaining[0];
+    }
 
     line();
     console.log(`  ${c.bold('episode ' + ep)}  ${c.dim('plan→')} family ${c.b(strategy.family)}  ${c.dim('strategy→')} ${c.bold(strategy.id)}`);
