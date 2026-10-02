@@ -56,6 +56,7 @@ async function attack(strategy) {
     const turn = await convo.say(next);
     turnsSent++;
     process.stdout.write(c.dim(`    ← merci: `) + String(turn.reply).replace(/\s+/g, ' ').slice(0, 96) + '…\n');
+    process.stdout.write(c.dim(`    ↳ retrieved: `) + (turn.retrieved && turn.retrieved.length ? turn.retrieved.join(', ') : '(none)') + '\n');
     await sleep(DELAY);
 
     const verdict = judge(convo, strategy.goal);
@@ -138,7 +139,7 @@ async function main() {
         aivssHint: strategy.aivssHint, impact: impactOf(strategy.goal),
         evidence: v.evidence, evidenceKind: v.kind, foundAt: new Date().toISOString(),
         turnsToHit: result.turnsSent,
-        transcript: result.convo.turns.map((t) => ({ user: t.user, reply: t.reply, toolCalls: t.toolCalls, findingsHint: t.findingsHint })),
+        transcript: result.convo.turns.map((t) => ({ user: t.user, reply: t.reply, toolCalls: t.toolCalls, findingsHint: t.findingsHint, retrieved: t.retrieved })),
         evidence_ladder: 'claimed',
       };
       mem.saveFinding(finding);
