@@ -1,0 +1,6 @@
+.env
+campaign/
+node_modules/
+
+# Instructor / teaching materials (presenter guides, slides, exercise answer keys) — kept on the HDD, not the repo
+labs/
