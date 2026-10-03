@@ -1,0 +1,19 @@
+{
+  "name": "attacker-pro",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "RedCell — advanced AI attacker agent: a multi-agent red-team campaign engine (orient→plan→attack→judge→verify→score→promote→report) with a rich terminal and an HTML control dashboard. Authorized lab use only.",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node attack.mjs",
+    "attack": "node attack.mjs",
+    "demo": "node attack.mjs --adapter mock",
+    "verify": "node verify.mjs",
+    "report": "node report.mjs",
+    "redteam": "node redteam.mjs",
+    "dashboard": "node server.mjs",
+    "clean": "rm -rf campaign",
+    "health": "node -e \"fetch('http://localhost:8080/health').then(r=>r.json()).then(j=>console.log(j)).catch(()=>{console.log('target not running');process.exit(1)})\""
+  }
+}
