@@ -37,7 +37,10 @@ function fmt(e) {
   switch (e.type) {
     case 'phase':   return { cls: 'phase', html: esc(e.name) + (e.note ? ' · ' + esc(e.note) : '') };
     case 'recon':   return { cls: 'recon', html: 'recon  ' + esc(clip(e.msg, 160)) };
-    case 'episode': return { cls: 'episode', html: `<b>episode ${e.ep}</b>  objective <b>${esc(e.objective)}</b> · via ${esc(e.orchestrator)} · conv ${esc((e.converters || []).join('+') || 'none')}` + (e.plan ? `<br>&nbsp;&nbsp;<span style="color:var(--mut)">${esc(clip(e.plan, 150))}</span>` : '') };
+    case 'episode': return { cls: 'episode', html:
+        `<b>episode ${e.ep}</b>  objective <b>${esc(e.objective)}</b>${e.objectiveLabel ? ' — ' + esc(e.objectiveLabel) : ''} · via ${esc(e.orchestrator)} · conv ${esc((e.converters || []).join('+') || 'none')}`
+        + ((e.strategyId || e.strategyTitle) ? `<br>&nbsp;&nbsp;strategy <b>${esc(e.strategyId || '?')}</b>${e.strategyTitle ? ' · ' + esc(e.strategyTitle) : ''}${e.family ? ` <span style="color:var(--mut)">[family ${esc(e.family)}]</span>` : ''}` : '')
+        + (e.plan ? `<br>&nbsp;&nbsp;<span style="color:var(--mut)">${esc(clip(e.plan, 150))}</span>` : '') };
     case 'plan':    return { cls: 'plan', html: `bandit ${esc(e.family.padEnd(16))} <span class="bar">${'█'.repeat(Math.round((e.score || 0) * 10))}${'░'.repeat(10 - Math.round((e.score || 0) * 10))}</span> ${esc(e.detail || '')}` };
     case 'say':     return { cls: 'say', html: '→ you  ' + (e.badge ? `<span class="b">[${esc(e.badge)}]</span> ` : '') + esc(clip(e.text, 150)) };
     case 'reply':   return { cls: 'reply', html: '← tgt  ' + esc(clip(e.text, 150)) };

@@ -52,7 +52,9 @@ function render(e) {
   switch (e.type) {
     case 'phase':   console.log('\n  ' + c.inv(c.bold(` ${e.name} `)) + (e.note ? '  ' + c.dim(e.note) : '')); break;
     case 'recon':   console.log(`  ${stamp()} ${c.mag('recon')}   ${e.msg}`); break;
-    case 'episode': rule(); console.log(`  ${c.bold('episode ' + e.ep)}  ${c.dim('objective')} ${c.b(e.objective)}  ${c.dim('via')} ${c.y(e.orchestrator)}  ${c.dim('conv')} ${e.converters?.join('+') || 'none'}`);
+    case 'episode': rule();
+                    console.log(`  ${c.bold('episode ' + e.ep)}  ${c.dim('objective')} ${c.b(e.objective)}${e.objectiveLabel ? c.dim(' — ' + e.objectiveLabel) : ''}  ${c.dim('via')} ${c.y(e.orchestrator)}  ${c.dim('conv')} ${e.converters?.join('+') || 'none'}`);
+                    if (e.strategyId || e.strategyTitle) console.log(`  ${c.dim('strategy')} ${c.y(e.strategyId || '?')}${e.strategyTitle ? ' · ' + e.strategyTitle : ''}${e.family ? c.dim('  [family ' + e.family + ']') : ''}`);
                     if (e.plan) console.log(`  ${c.dim('plan   ')} ${e.plan}`); break;
     case 'plan':    console.log(`  ${c.dim('bandit ')} ${e.family.padEnd(16)} ${bar(e.score)} ${c.dim(e.detail || '')}`); break;
     case 'say':     console.log(`    ${c.gray('→ you  ')} ${e.badge ? c.y('[' + e.badge + '] ') : ''}${clip(e.text, 96)}`); break;

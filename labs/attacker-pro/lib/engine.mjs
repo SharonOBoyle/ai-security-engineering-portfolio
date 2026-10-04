@@ -86,8 +86,11 @@ export async function runCampaign(opts = {}) {
     if (allowOverride && smart?.orchestrator && ORCHESTRATORS[smart.orchestrator]) strategy = { ...strategy, orchestrator: smart.orchestrator };
     if (allowOverride && Array.isArray(smart?.converters)) strategy = { ...strategy, converterChain: smart.converters.filter((c) => CONVERTER_IDS.includes(c)) };
 
-    emit({ type: 'episode', ep, objective: strategy.objective, orchestrator: strategy.orchestrator,
-      converters: strategy.converterChain, plan: smart?.rationale ? `strategist${allowOverride ? '' : ' (advisory)'}: ${smart.rationale}` : `bandit → family ${family} · ${strategy.id}` });
+    emit({ type: 'episode', ep, objective: strategy.objective,
+      objectiveLabel: OBJECTIVES[strategy.objective]?.label, family,
+      strategyId: strategy.id, strategyTitle: strategy.title,
+      orchestrator: strategy.orchestrator, converters: strategy.converterChain,
+      ...(smart?.rationale ? { plan: `strategist${allowOverride ? '' : ' (advisory)'}: ${smart.rationale}` } : {}) });
     for (const r of ranked.slice(0, 4)) emit({ type: 'plan', family: r.family, score: r.score === Infinity ? 1 : Math.max(0, Math.min(1, r.score / 2)), detail: `pulls ${r.pulls} wins ${r.wins}` });
 
     // ---- ATTACK + JUDGE ----
