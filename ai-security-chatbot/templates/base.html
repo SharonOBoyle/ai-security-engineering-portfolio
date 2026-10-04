@@ -1932,10 +1932,85 @@
         .modal .close-modal {
             color: #e8eaed !important;
         }
+        /* Form fields keep the browser's native white background unless given one explicitly — light text
+           (from the override above) on that white background is invisible while typing. */
+        .modal-content input,
+        .modal-content select,
+        .modal-content textarea {
+            background: #1a1d24 !important;
+            border: 1px solid #2a2e37;
+        }
+        .prompt-modal-input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+    </style>
+
+    <!-- Toast notifications — themed replacement for browser alert() popups -->
+    <style>
+        .toast-container {
+            position: fixed;
+            top: 90px;
+            right: 20px;
+            z-index: 11000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 360px;
+        }
+        .toast {
+            background: #1a1d24;
+            color: #e8eaed;
+            border: 1px solid #2a2e37;
+            border-left: 4px solid #3ea6ff;
+            border-radius: 8px;
+            padding: 14px 40px 14px 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            font-size: 0.95rem;
+            line-height: 1.4;
+            position: relative;
+            animation: toast-in 0.25s ease;
+        }
+        .toast.success { border-left-color: #2ecc71; }
+        .toast.error   { border-left-color: #ff6b6b; }
+        .toast-close {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            cursor: pointer;
+            color: #9aa3b3;
+            font-size: 16px;
+            line-height: 1;
+        }
+        .toast-close:hover { color: #e8eaed; }
+        .toast.closing { animation: toast-out 0.2s ease forwards; }
+        @keyframes toast-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes toast-out { to { opacity: 0; transform: translateX(24px); } }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
+    <!-- Toast notifications mount here — see showToast() below -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Themed replacement for the browser's native prompt() — see showPrompt() below -->
+    <div id="prompt-modal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 420px;">
+            <div class="modal-header">
+                <h3>Input needed</h3>
+                <span class="close-modal" id="prompt-modal-cancel-x">&times;</span>
+            </div>
+            <p id="prompt-modal-message" style="margin-bottom: 10px;"></p>
+            <input type="text" id="prompt-modal-input" class="prompt-modal-input">
+            <div class="form-actions" style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px;">
+                <button class="btn" id="prompt-modal-cancel">Cancel</button>
+                <button class="btn btn-primary" id="prompt-modal-ok">OK</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Navigation Header -->
     <nav class="navbar">
         <div class="nav-container">
@@ -2272,7 +2347,68 @@
     </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
-    
+
+    <!-- Toast notifications — call showToast(message, type) anywhere instead of alert(). type is
+         'info' (default), 'success', or 'error'. Replaces the browser's native alert() popup with
+         something that matches the page theme. -->
+    <script>
+        function showToast(message, type = 'info', timeout = 5000) {
+            const container = document.getElementById('toast-container');
+            if (!container) { console.warn('[toast]', message); return; }
+            const el = document.createElement('div');
+            el.className = `toast ${type}`;
+            el.textContent = message;
+            const close = document.createElement('span');
+            close.className = 'toast-close';
+            close.textContent = '×';
+            close.onclick = () => removeToast(el);
+            el.appendChild(close);
+            container.appendChild(el);
+            setTimeout(() => removeToast(el), timeout);
+        }
+        function removeToast(el) {
+            if (!el.isConnected) return;
+            el.classList.add('closing');
+            setTimeout(() => el.remove(), 200);
+        }
+
+        // Themed replacement for the browser's native prompt(). Returns a Promise — resolves with the
+        // entered text, or null if cancelled/closed — so callers just add `await` in place of `prompt(...)`.
+        function showPrompt(message, defaultValue = '') {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('prompt-modal');
+                const input = document.getElementById('prompt-modal-input');
+                document.getElementById('prompt-modal-message').textContent = message;
+                input.value = defaultValue;
+                modal.style.display = 'flex';
+                input.focus();
+
+                const okBtn = document.getElementById('prompt-modal-ok');
+                const cancelBtn = document.getElementById('prompt-modal-cancel');
+                const cancelX = document.getElementById('prompt-modal-cancel-x');
+
+                function cleanup(result) {
+                    modal.style.display = 'none';
+                    okBtn.removeEventListener('click', onOk);
+                    cancelBtn.removeEventListener('click', onCancel);
+                    cancelX.removeEventListener('click', onCancel);
+                    input.removeEventListener('keydown', onKeydown);
+                    resolve(result);
+                }
+                function onOk() { cleanup(input.value); }
+                function onCancel() { cleanup(null); }
+                function onKeydown(e) {
+                    if (e.key === 'Enter') { e.preventDefault(); onOk(); }
+                    if (e.key === 'Escape') onCancel();
+                }
+                okBtn.addEventListener('click', onOk);
+                cancelBtn.addEventListener('click', onCancel);
+                cancelX.addEventListener('click', onCancel);
+                input.addEventListener('keydown', onKeydown);
+            });
+        }
+    </script>
+
     <!-- Login Modal JavaScript -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {

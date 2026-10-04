@@ -500,6 +500,12 @@
     color: white;
 }
 
+/* Same fix as tickets.html: the open option list is a native popup that ignores the translucent style above. */
+.action-group select option {
+    background: #1a1d24;
+    color: white;
+}
+
 .admin-reply-section textarea {
     width: 100%;
     padding: 0.75rem;
@@ -802,12 +808,12 @@ function assignTicket() {
     });
 }
 
-function updateStatus() {
+async function updateStatus() {
     if (!currentTicketId) return;
-    
+
     const newStatus = document.getElementById('update-status').value;
-    const resolutionNotes = newStatus === 'resolved' ? 
-        prompt('Resolution notes (optional):') || '' : '';
+    const resolutionNotes = newStatus === 'resolved' ?
+        (await showPrompt('Resolution notes (optional):')) || '' : '';
     
     fetch(`/api/admin/tickets/${currentTicketId}/status`, {
         method: 'PUT',

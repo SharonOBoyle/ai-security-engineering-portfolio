@@ -6,3 +6,8 @@ node_modules/
 output/
 *.log
 .DS_Store
+
+# Claude Code's own local permission/settings file — rewritten live by the harness as tool
+# permissions get approved during a session; machine-specific, never meant to be shared.
+.claude/settings.json
+**/.claude/settings.json

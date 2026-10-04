@@ -192,6 +192,12 @@
     font-weight: 500;
 }
 
+/* The generic .modal-content in base.html caps at 400px, sized for the simple login/register forms — this
+   modal holds far more (SLA card, escalation card, description, add-update box), so give it more room. */
+#ticket-modal .modal-content {
+    max-width: 700px;
+}
+
 .form-group input,
 .form-group textarea,
 .form-group select {
@@ -217,6 +223,13 @@
 .form-group input::placeholder,
 .form-group textarea::placeholder {
     color: rgba(255,255,255,0.6);
+}
+
+/* The closed <select> box picks up the translucent style above, but the open option list is rendered by
+   the browser as a native popup that ignores inherited background/color — give it an explicit dark theme. */
+.form-group select option {
+    background: #1a1d24;
+    color: white;
 }
 
 .btn {
@@ -254,6 +267,12 @@
     border: 1px solid rgba(255,255,255,0.3);
     border-radius: 8px;
     background: rgba(255,255,255,0.1);
+    color: white;
+}
+
+/* Same fix as .form-group select: the open option list is a native popup that ignores the translucent style above. */
+.tickets-filters select option {
+    background: #1a1d24;
     color: white;
 }
 
@@ -678,16 +697,16 @@ document.getElementById('create-ticket-form').addEventListener('submit', functio
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert(`Ticket created successfully! Ticket number: ${data.ticket_number}`);
+            showToast(`Ticket created successfully! Ticket number: ${data.ticket_number}`, 'success');
             e.target.reset();
             loadTickets(); // Refresh the tickets list
         } else {
-            alert('Failed to create ticket: ' + data.error);
+            showToast('Failed to create ticket: ' + data.error, 'error');
         }
     })
     .catch(error => {
         console.error('Error creating ticket:', error);
-        alert('Error creating ticket. Please try again.');
+        showToast('Error creating ticket. Please try again.', 'error');
     });
 });
 
@@ -716,12 +735,12 @@ function openTicketModal(ticketNumber) {
                 
                 document.getElementById('ticket-modal').style.display = 'flex';
             } else {
-                alert('Failed to load ticket details: ' + data.error);
+                showToast('Failed to load ticket details: ' + data.error, 'error');
             }
         })
         .catch(error => {
             console.error('Error loading ticket:', error);
-            alert('Error loading ticket details.');
+            showToast('Error loading ticket details.', 'error');
         });
 }
 
@@ -789,13 +808,13 @@ function checkEscalationStatus(ticketId) {
         .catch(error => console.error('Error checking escalation:', error));
 }
 
-function escalateTicket() {
+async function escalateTicket() {
     if (!window.currentTicketId) {
-        alert('No ticket selected for escalation');
+        showToast('No ticket selected for escalation', 'error');
         return;
     }
-    
-    const reason = prompt('Please provide a reason for escalation:');
+
+    const reason = await showPrompt('Please provide a reason for escalation:');
     if (!reason) return;
     
     fetch(`/api/tickets/${window.currentTicketId}/escalate`, {
@@ -810,16 +829,16 @@ function escalateTicket() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('Ticket escalated successfully! Our team will prioritize your request.');
+            showToast('Ticket escalated successfully! Our team will prioritize your request.', 'success');
             closeTicketModal();
             loadTickets(); // Refresh the tickets list
         } else {
-            alert('Failed to escalate ticket: ' + data.error);
+            showToast('Failed to escalate ticket: ' + data.error, 'error');
         }
     })
     .catch(error => {
         console.error('Error escalating ticket:', error);
-        alert('Error escalating ticket. Please try again.');
+        showToast('Error escalating ticket. Please try again.', 'error');
     });
 }
 
@@ -900,24 +919,24 @@ document.getElementById('update-ticket-form').addEventListener('submit', functio
         
         if (!ok) {
             const errorMsg = data.error || `Server error: ${status}`;
-            alert('Failed to add update: ' + errorMsg);
+            showToast('Failed to add update: ' + errorMsg, 'error');
             return;
         }
         
         if (data.success) {
-            alert('Update added successfully!');
+            showToast('Update added successfully!', 'success');
             document.getElementById('update-message').value = '';
             // Reload the ticket details
             const ticketNumber = document.getElementById('ticket-modal-title').textContent.replace('Ticket ', '');
             openTicketModal(ticketNumber);
         } else {
-            alert('Failed to add update: ' + (data.error || 'Unknown error'));
+            showToast('Failed to add update: ' + (data.error || 'Unknown error'), 'error');
         }
     })
     .catch(error => {
         console.error('Error adding update:', error);
         console.error('Error details:', error.message);
-        alert('Error adding update: ' + error.message);
+        showToast('Error adding update: ' + error.message, 'error');
     });
 });
 
