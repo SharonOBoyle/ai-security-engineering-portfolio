@@ -5,6 +5,8 @@ const el = (t, c, h) => { const e = document.createElement(t); if (c) e.classNam
 const esc = (s) => String(s ?? '').replace(/[&<>]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
 const clip = (s, n) => { s = String(s ?? '').replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n - 1) + '…' : s; };
 const ts = (t) => new Date(t || Date.now()).toISOString().slice(11, 19);
+const dt = (t) => new Date(t || Date.now()).toISOString().slice(0, 19).replace('T', ' ');
+const dur = (ms) => { const s = Math.max(0, Math.round(ms / 1000)); return s < 60 ? s + 's' : Math.floor(s / 60) + 'm' + String(s % 60).padStart(2, '0') + 's'; };
 
 // ---------- tabs ----------
 document.querySelectorAll('.tabs .tab').forEach((t) => t.onclick = () => {
@@ -24,9 +26,10 @@ document.querySelectorAll('.seg .tab').forEach((t) => t.onclick = () => {
 
 // ---------- SSE stream ----------
 const stream = $('#stream');
+let runStartAt = 0;
 function addEvent(e) {
-  if (e.type === 'runStart') { stream.innerHTML = ''; setRunning(true); return; }
-  if (e.type === 'runEnd') { setRunning(false); loadFindings(); return; }
+  if (e.type === 'runStart') { stream.innerHTML = ''; setRunning(true); runStartAt = e.at || Date.now(); stream.appendChild(el('div', 'ev run', `<b>● ${esc(e.mode || 'run')} started</b> ${dt(runStartAt)}`)); return; }
+  if (e.type === 'runEnd') { setRunning(false); const end = e.at || Date.now(); stream.appendChild(el('div', 'ev run', `<b>● ${esc(e.mode || 'run')} finished</b> ${dt(end)}${runStartAt ? ' · duration ' + dur(end - runStartAt) : ''}`)); stream.parentElement.scrollTop = stream.parentElement.scrollHeight; loadFindings(); return; }
   const line = fmt(e);
   if (!line) return;
   const div = el('div', 'ev ' + line.cls, (e._replay ? '' : `<span class="ts">${ts(e.t)}</span>`) + line.html);
