@@ -121,7 +121,7 @@ export async function runCampaign(opts = {}) {
       emit({ type: 'verdict', hit: true, label: v.label, kind: v.kind, evidence: v.evidence });
       saveCandidate(strategy, result, found, bankedObjectives, emit);
     } else {
-      emit({ type: 'verdict', hit: false, detail: `${strategy.objective} not leaked in ${result.turns.length} turn(s)` });
+      emit({ type: 'verdict', hit: false, status: 'HELD', detail: `${strategy.objective} not achieved in ${result.turns.length} turn${result.turns.length === 1 ? '' : 's'}` });
       const note = await brains.lesson({ objective: strategy.objective, transcript: result.turns.map((t) => `${t.user} → ${t.reply}`).join(' | ') }).catch(() => null);
       mem.lesson({ strategy: strategy.id, objective: strategy.objective, note: note || `held after ${result.turns.length} turns` });
       mem.journal(`MISS ${strategy.id} (${strategy.objective})`);

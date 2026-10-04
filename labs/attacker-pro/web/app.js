@@ -44,7 +44,7 @@ function fmt(e) {
     case 'plan':    return { cls: 'plan', html: `bandit ${esc(e.family.padEnd(16))} <span class="bar">${'█'.repeat(Math.round((e.score || 0) * 10))}${'░'.repeat(10 - Math.round((e.score || 0) * 10))}</span> ${esc(e.detail || '')}` };
     case 'say':     return { cls: 'say', html: '→ you  ' + (e.badge ? `<span class="b">[${esc(e.badge)}]</span> ` : '') + esc(clip(e.text, 150)) };
     case 'reply':   return { cls: 'reply', html: '← tgt  ' + esc(clip(e.text, 150)) };
-    case 'verdict': return e.hit ? { cls: 'verdict hit', html: `✓ HIT  ${esc(e.label)} (${esc(e.kind)}: ${esc(clip(e.evidence, 80))})` } : { cls: 'verdict miss', html: '✗ ' + esc(e.detail || 'held') };
+    case 'verdict': return e.hit ? { cls: 'verdict hit', html: `✓ HIT  ${esc(e.label)} (${esc(e.kind)}: ${esc(clip(e.evidence, 80))})` } : { cls: 'verdict miss', html: '✗ ' + (e.status ? esc(e.status) + ' — ' : '') + esc(e.detail || 'held') };
     case 'rubric':  return { cls: 'rubric', html: `rubric ${e.agree ? 'agrees' : 'differs'} — ${esc(clip(e.note, 90))}` };
     case 'verify':  return { cls: 'verdict ' + (e.ok ? 'hit' : 'miss'), html: `${esc(e.id)}  repro ${esc(e.repro)}  ${esc(e.gate || '')}` };
     case 'score':   return { cls: 'score', html: `AIVSS ${esc(e.score)} ${esc(e.band)}  <span style="color:var(--mut)">${esc(e.vector)}</span>` };

@@ -60,7 +60,7 @@ function render(e) {
     case 'say':     console.log(`    ${c.gray('→ you  ')} ${e.badge ? c.y('[' + e.badge + '] ') : ''}${clip(e.text, 96)}`); break;
     case 'reply':   console.log(`    ${c.gray('← tgt  ')} ${clip(e.text, 96)}`); break;
     case 'verdict': e.hit ? console.log(`  ${c.g('✓ HIT')}  ${c.bold(e.label)} ${c.dim('(' + e.kind + ': ' + clip(e.evidence, 60) + ')')}`)
-                          : console.log(`  ${c.y('✗ held')} ${c.dim(e.detail || '')}`); break;
+                          : console.log(`  ${c.y('✗ ' + (e.status || 'held'))} ${c.dim((e.status ? '— ' : '') + (e.detail || ''))}`); break;
     case 'rubric':  console.log(`  ${c.dim('rubric ')} ${e.agree ? c.g('agrees') : c.y('differs')} ${c.dim('— ' + clip(e.note, 72))}`); break;
     case 'memory':  console.log(`  ${c.gray('· ' + e.msg)}`); break;
     case 'verify':  console.log(`  ${c.dim(e.id.padEnd(18))} repro ${e.ok ? c.g(e.repro) : c.r(e.repro)}  ${c.dim(e.gate || '')}`); break;
