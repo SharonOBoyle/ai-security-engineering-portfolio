@@ -75,10 +75,15 @@ input:focus,select:focus{outline:none;border-color:var(--acc)}
 .legend{margin-bottom:12px;padding:8px 14px;position:sticky;top:-14px;z-index:1;background:var(--panel);box-shadow:0 4px 8px -4px rgba(0,0,0,.6)}
 .legend summary{cursor:pointer;color:var(--dim);font-size:12px}
 .legend summary:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:4px}
-.legend dl{display:grid;grid-template-columns:max-content 1fr;gap:3px 14px;margin:10px 0 2px;font-size:12px}
+.legend-body{max-height:62vh;overflow:auto;margin-top:8px}
+.legend-intro{margin:0 0 4px;font-size:12px;color:var(--dim);line-height:1.5}
+.legend h4{margin:12px 0 3px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc2)}
+.legend h4:first-of-type{margin-top:2px}
+.legend dl{display:grid;grid-template-columns:fit-content(40%) 1fr;gap:3px 14px;margin:0 0 2px;font-size:12px}
 .legend dt{font-family:var(--mono);color:var(--acc)}
-.legend dd{margin:0;color:var(--dim)}
+.legend dd{margin:0;color:var(--dim);line-height:1.5}
 .legend code{font-family:var(--mono);color:var(--fg)}
+.legend em{font-style:italic;color:var(--fg)}
 
 /* findings */
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:12px}
