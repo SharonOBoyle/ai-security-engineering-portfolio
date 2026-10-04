@@ -56,7 +56,14 @@ function render(e) {
                     console.log(`  ${c.bold('episode ' + e.ep)}  ${c.dim('objective')} ${c.b(e.objective)}${e.objectiveLabel ? c.dim(' — ' + e.objectiveLabel) : ''}  ${c.dim('via')} ${c.y(e.orchestrator)}  ${c.dim('conv')} ${e.converters?.join('+') || 'none'}`);
                     if (e.strategyId || e.strategyTitle) console.log(`  ${c.dim('strategy')} ${c.y(e.strategyId || '?')}${e.strategyTitle ? ' · ' + e.strategyTitle : ''}${e.family ? c.dim('  [family ' + e.family + ']') : ''}`);
                     if (e.plan) console.log(`  ${c.dim('plan   ')} ${e.plan}`); break;
-    case 'plan':    console.log(`  ${c.dim('bandit ')} ${e.family.padEnd(16)} ${bar(e.score)} ${c.dim(e.detail || '')}`); break;
+    case 'plan': {
+      if (e.rank == null) { console.log(`  ${c.dim('bandit ')} ${e.family.padEnd(16)} ${c.dim(e.detail || '')}`); break; }
+      const fam = e.family.padEnd(16);
+      const hist = c.dim(`history ${e.wins}/${e.pulls} primary hits`);
+      const tail = e.picked ? `${c.y('selected')} ${c.dim('·')} ${hist}` : `${' '.repeat(11)}${hist}`;
+      console.log(`  ${c.dim('planner rank ' + e.rank)} ${e.picked ? c.y('▶') : ' '} ${e.picked ? c.bold(fam) : fam} ${tail}`);
+      break;
+    }
     case 'say':     console.log(`    ${c.gray('→ you  ')} ${e.badge ? c.y('[' + e.badge + '] ') : ''}${clip(e.text, 96)}`); break;
     case 'reply':   console.log(`    ${c.gray('← tgt  ')} ${clip(e.text, 96)}`); break;
     case 'verdict': e.hit ? console.log(`  ${c.g('✓ HIT')}  ${c.bold(e.label)} ${c.dim('(' + e.kind + ': ' + clip(e.evidence, 60) + ')')}`)

@@ -80,7 +80,7 @@
             <dt>objective</dt><dd>security-goal code; the verdict later gives its human-readable meaning</dd>
             <dt>family / strategy</dt><dd>related attack group / concrete attack recipe ID selected within it</dd>
             <dt>via / conv</dt><dd>how turns are sequenced / how messages are transformed; <code>conv none</code> means unchanged</dd>
-            <dt>bandit bar / pulls / wins</dt><dd>planner priority, <strong>not</strong> a success percentage / family attempts / attempts whose primary objective was achieved</dd>
+            <dt>planner rank / ▶ / history W/P</dt><dd>candidate families ordered by planner selection priority; ▶ marks the family selected for this episode; history = cumulative primary-objective hits over attempts in the current campaign; ranking balances past results with exploration, so the highest historical hit rate is <strong>not</strong> always rank 1</dd>
             <dt>→ you / ← tgt</dt><dd>RedCell's attacker message / the target agent's response</dd>
             <dt>[warm-up] / [escalate]</dt><dd>turn-stage labels assigned by a multi-turn orchestrator</dd>
             <dt>canary / flag</dt><dd>planted value proving disclosure / target-side signal of a prohibited action condition</dd>

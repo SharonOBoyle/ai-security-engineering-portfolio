@@ -41,7 +41,9 @@ function fmt(e) {
         `<b>episode ${e.ep}</b>  objective <b>${esc(e.objective)}</b>${e.objectiveLabel ? ' — ' + esc(e.objectiveLabel) : ''} · via ${esc(e.orchestrator)} · conv ${esc((e.converters || []).join('+') || 'none')}`
         + ((e.strategyId || e.strategyTitle) ? `<br>&nbsp;&nbsp;strategy <b>${esc(e.strategyId || '?')}</b>${e.strategyTitle ? ' · ' + esc(e.strategyTitle) : ''}${e.family ? ` <span style="color:var(--mut)">[family ${esc(e.family)}]</span>` : ''}` : '')
         + (e.plan ? `<br>&nbsp;&nbsp;<span style="color:var(--mut)">${esc(clip(e.plan, 150))}</span>` : '') };
-    case 'plan':    return { cls: 'plan', html: `bandit ${esc(e.family.padEnd(16))} <span class="bar">${'█'.repeat(Math.round((e.score || 0) * 10))}${'░'.repeat(10 - Math.round((e.score || 0) * 10))}</span> ${esc(e.detail || '')}` };
+    case 'plan':    return e.rank == null
+        ? { cls: 'plan', html: `bandit ${esc(e.family)} ${esc(e.detail || '')}` }
+        : { cls: 'plan', html: `planner rank ${e.rank} ${e.picked ? '▶' : ' '} ${e.picked ? `<b>${esc(e.family.padEnd(16))}</b>` : esc(e.family.padEnd(16))} ${e.picked ? '<b>selected</b> · ' : esc(' '.repeat(11))}history ${esc(e.wins + '/' + e.pulls)} primary hits` };
     case 'say':     return { cls: 'say', html: '→ you  ' + (e.badge ? `<span class="b">[${esc(e.badge)}]</span> ` : '') + esc(clip(e.text, 150)) };
     case 'reply':   return { cls: 'reply', html: '← tgt  ' + esc(clip(e.text, 150)) };
     case 'verdict': return e.hit ? { cls: 'verdict hit', html: `✓ HIT  ${esc(e.label)} (${esc(e.kind)}: ${esc(clip(e.evidence, 80))})` } : { cls: 'verdict miss', html: '✗ ' + (e.status ? esc(e.status) + ' — ' : '') + esc(e.detail || 'held') };

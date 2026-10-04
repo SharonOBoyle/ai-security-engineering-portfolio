@@ -91,7 +91,7 @@ export async function runCampaign(opts = {}) {
       strategyId: strategy.id, strategyTitle: strategy.title,
       orchestrator: strategy.orchestrator, converters: strategy.converterChain,
       ...(smart?.rationale ? { plan: `strategist${allowOverride ? '' : ' (advisory)'}: ${smart.rationale}` } : {}) });
-    for (const r of ranked.slice(0, 4)) emit({ type: 'plan', family: r.family, score: r.score === Infinity ? 1 : Math.max(0, Math.min(1, r.score / 2)), detail: `pulls ${r.pulls} wins ${r.wins}` });
+    ranked.slice(0, 4).forEach((r, i) => emit({ type: 'plan', family: r.family, rank: i + 1, picked: i === 0, pulls: r.pulls, wins: r.wins, detail: `pulls ${r.pulls} wins ${r.wins}` }));
 
     // ---- ATTACK + JUDGE ----
     const ctx = {
