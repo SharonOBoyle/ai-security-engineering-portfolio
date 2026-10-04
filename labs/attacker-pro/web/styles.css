@@ -68,6 +68,9 @@ input:focus,select:focus{outline:none;border-color:var(--acc)}
 .ev.promote,.ev.report{color:var(--g)}
 .ev.warn{color:var(--y)} .ev.error{color:var(--r)}
 .ev.info,.ev.memory,.ev.rubric{color:var(--mut)}
+.ev.info.head{color:var(--acc2);font-weight:600;margin-top:6px}
+.ev.info.lead{color:var(--fg);font-weight:700}
+.ev.info .ids{color:var(--acc)}
 .ev.verdict,.ev.warn,.ev.error{border-left:3px solid currentColor;padding-left:8px;margin:3px 0}
 .legend{margin-bottom:12px;padding:8px 14px;position:sticky;top:-14px;z-index:1;background:var(--panel);box-shadow:0 4px 8px -4px rgba(0,0,0,.6)}
 .legend summary{cursor:pointer;color:var(--dim);font-size:12px}

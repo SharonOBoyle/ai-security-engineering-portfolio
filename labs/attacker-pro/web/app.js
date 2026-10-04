@@ -58,7 +58,12 @@ function fmt(e) {
     case 'memory':  return { cls: 'memory', html: '· ' + esc(clip(e.msg, 150)) };
     case 'warn':    return { cls: 'warn', html: '⚠ ' + esc(e.msg) };
     case 'error':   return { cls: 'error', html: '✖ ' + esc(e.msg) };
-    case 'info':    return { cls: 'info', html: esc(clip(e.msg, 160)) };
+    case 'info': {
+      const ids = e.msg.match(/^(\s*candidate IDs:\s*)(.+)$/);
+      if (ids) return { cls: 'info', html: esc(ids[1]) + `<span class="ids">${esc(clip(ids[2], 150))}</span>` };
+      const sub = /^(saved family history|this run:)/.test(e.msg) ? ' head' : /^\s*candidates banked:/.test(e.msg) ? ' lead' : '';
+      return { cls: 'info' + sub, html: esc(clip(e.msg, 160)) };
+    }
     default: return null;
   }
 }
