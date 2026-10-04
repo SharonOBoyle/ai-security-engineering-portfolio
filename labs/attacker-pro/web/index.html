@@ -73,7 +73,24 @@
         <div class="tab" data-pane="artifacts">Artifacts</div>
       </nav>
 
-      <div class="pane active" id="pane-live"><div id="stream"></div></div>
+      <div class="pane active" id="pane-live">
+        <details class="card legend">
+          <summary>How to read the live console</summary>
+          <dl>
+            <dt>objective</dt><dd>security-goal code; the verdict later gives its human-readable meaning</dd>
+            <dt>family / strategy</dt><dd>related attack group / concrete attack recipe ID selected within it</dd>
+            <dt>via / conv</dt><dd>how turns are sequenced / how messages are transformed; <code>conv none</code> means unchanged</dd>
+            <dt>bandit bar / pulls / wins</dt><dd>planner priority, <strong>not</strong> a success percentage / family attempts / attempts whose primary objective was achieved</dd>
+            <dt>→ you / ← tgt</dt><dd>RedCell's attacker message / the target agent's response</dd>
+            <dt>[warm-up] / [escalate]</dt><dd>turn-stage labels assigned by a multi-turn orchestrator</dd>
+            <dt>canary / flag</dt><dd>planted value proving disclosure / target-side signal of a prohibited action condition</dd>
+            <dt>✓ HIT / ✗ result</dt><dd>primary objective achieved with deterministic evidence / not achieved in that episode. A HIT is still only a candidate until verification</dd>
+            <dt>opportunistic find</dt><dd>another objective detected in the same response</dd>
+            <dt>brains: …=code</dt><dd>optional LLM assistance is off; deterministic fallback code is active</dd>
+          </dl>
+        </details>
+        <div id="stream"></div>
+      </div>
 
       <div class="pane" id="pane-findings"><div class="cards" id="cards"><div class="empty">No findings yet — run a campaign, then verify.</div></div></div>
 
