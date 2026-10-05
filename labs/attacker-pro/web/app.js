@@ -5,6 +5,8 @@ const el = (t, c, h) => { const e = document.createElement(t); if (c) e.classNam
 const esc = (s) => String(s ?? '').replace(/[&<>]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
 const clip = (s, n) => { s = String(s ?? '').replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n - 1) + '…' : s; };
 const ts = (t) => new Date(t || Date.now()).toISOString().slice(11, 19);
+const dt = (t) => new Date(t || Date.now()).toISOString().slice(0, 19).replace('T', ' ');
+const dur = (ms) => { const s = Math.max(0, Math.round(ms / 1000)); return s < 60 ? s + 's' : Math.floor(s / 60) + 'm' + String(s % 60).padStart(2, '0') + 's'; };
 
 // ---------- tabs ----------
 document.querySelectorAll('.tabs .tab').forEach((t) => t.onclick = () => {
@@ -24,9 +26,10 @@ document.querySelectorAll('.seg .tab').forEach((t) => t.onclick = () => {
 
 // ---------- SSE stream ----------
 const stream = $('#stream');
+let runStartAt = 0;
 function addEvent(e) {
-  if (e.type === 'runStart') { stream.innerHTML = ''; setRunning(true); return; }
-  if (e.type === 'runEnd') { setRunning(false); loadFindings(); return; }
+  if (e.type === 'runStart') { stream.innerHTML = ''; setRunning(true); runStartAt = e.at || Date.now(); stream.appendChild(el('div', 'ev run', `<b>● ${esc(e.mode || 'run')} started</b> ${dt(runStartAt)}`)); return; }
+  if (e.type === 'runEnd') { setRunning(false); const end = e.at || Date.now(); stream.appendChild(el('div', 'ev run', `<b>● ${esc(e.mode || 'run')} finished</b> ${dt(end)}${runStartAt ? ' · duration ' + dur(end - runStartAt) : ''}`)); stream.parentElement.scrollTop = stream.parentElement.scrollHeight; loadFindings(); return; }
   const line = fmt(e);
   if (!line) return;
   const div = el('div', 'ev ' + line.cls, (e._replay ? '' : `<span class="ts">${ts(e.t)}</span>`) + line.html);
@@ -37,11 +40,16 @@ function fmt(e) {
   switch (e.type) {
     case 'phase':   return { cls: 'phase', html: esc(e.name) + (e.note ? ' · ' + esc(e.note) : '') };
     case 'recon':   return { cls: 'recon', html: 'recon  ' + esc(clip(e.msg, 160)) };
-    case 'episode': return { cls: 'episode', html: `<b>episode ${e.ep}</b>  objective <b>${esc(e.objective)}</b> · via ${esc(e.orchestrator)} · conv ${esc((e.converters || []).join('+') || 'none')}` + (e.plan ? `<br>&nbsp;&nbsp;<span style="color:var(--mut)">${esc(clip(e.plan, 150))}</span>` : '') };
-    case 'plan':    return { cls: 'plan', html: `bandit ${esc(e.family.padEnd(16))} <span class="bar">${'█'.repeat(Math.round((e.score || 0) * 10))}${'░'.repeat(10 - Math.round((e.score || 0) * 10))}</span> ${esc(e.detail || '')}` };
+    case 'episode': return { cls: 'episode', html:
+        `<b>episode ${e.ep}</b>  objective <b>${esc(e.objective)}</b>${e.objectiveLabel ? ' — ' + esc(e.objectiveLabel) : ''} · via ${esc(e.orchestrator)} · conv ${esc((e.converters || []).join('+') || 'none')}`
+        + ((e.strategyId || e.strategyTitle) ? `<br>&nbsp;&nbsp;strategy <b>${esc(e.strategyId || '?')}</b>${e.strategyTitle ? ' · ' + esc(e.strategyTitle) : ''}${e.family ? ` <span style="color:var(--mut)">[family ${esc(e.family)}]</span>` : ''}` : '')
+        + (e.plan ? `<br>&nbsp;&nbsp;<span style="color:var(--mut)">${esc(clip(e.plan, 150))}</span>` : '') };
+    case 'plan':    return e.rank == null
+        ? { cls: 'plan', html: `bandit ${esc(e.family)} ${esc(e.detail || '')}` }
+        : { cls: 'plan', html: `planner rank ${e.rank} ${e.picked ? '▶' : ' '} ${e.picked ? `<b>${esc(e.family.padEnd(16))}</b>` : esc(e.family.padEnd(16))} ${e.picked ? '<b>selected</b> · ' : esc(' '.repeat(11))}history ${esc(e.wins + '/' + e.pulls)} primary hits` };
     case 'say':     return { cls: 'say', html: '→ you  ' + (e.badge ? `<span class="b">[${esc(e.badge)}]</span> ` : '') + esc(clip(e.text, 150)) };
     case 'reply':   return { cls: 'reply', html: '← tgt  ' + esc(clip(e.text, 150)) };
-    case 'verdict': return e.hit ? { cls: 'verdict hit', html: `✓ HIT  ${esc(e.label)} (${esc(e.kind)}: ${esc(clip(e.evidence, 80))})` } : { cls: 'verdict miss', html: '✗ ' + esc(e.detail || 'held') };
+    case 'verdict': return e.hit ? { cls: 'verdict hit', html: `✓ HIT  ${esc(e.label)} (${esc(e.kind)}: ${esc(clip(e.evidence, 80))})` } : { cls: 'verdict miss', html: '✗ ' + (e.status ? esc(e.status) + ' — ' : '') + esc(e.detail || 'held') };
     case 'rubric':  return { cls: 'rubric', html: `rubric ${e.agree ? 'agrees' : 'differs'} — ${esc(clip(e.note, 90))}` };
     case 'verify':  return { cls: 'verdict ' + (e.ok ? 'hit' : 'miss'), html: `${esc(e.id)}  repro ${esc(e.repro)}  ${esc(e.gate || '')}` };
     case 'score':   return { cls: 'score', html: `AIVSS ${esc(e.score)} ${esc(e.band)}  <span style="color:var(--mut)">${esc(e.vector)}</span>` };
@@ -50,7 +58,12 @@ function fmt(e) {
     case 'memory':  return { cls: 'memory', html: '· ' + esc(clip(e.msg, 150)) };
     case 'warn':    return { cls: 'warn', html: '⚠ ' + esc(e.msg) };
     case 'error':   return { cls: 'error', html: '✖ ' + esc(e.msg) };
-    case 'info':    return { cls: 'info', html: esc(clip(e.msg, 160)) };
+    case 'info': {
+      const ids = e.msg.match(/^(\s*candidate IDs:\s*)(.+)$/);
+      if (ids) return { cls: 'info', html: esc(ids[1]) + `<span class="ids">${esc(clip(ids[2], 150))}</span>` };
+      const sub = /^(saved family history|this run:)/.test(e.msg) ? ' head' : /^\s*candidates banked:/.test(e.msg) ? ' lead' : '';
+      return { cls: 'info' + sub, html: esc(clip(e.msg, 160)) };
+    }
     default: return null;
   }
 }

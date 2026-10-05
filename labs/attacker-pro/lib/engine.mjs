@@ -63,6 +63,7 @@ export async function runCampaign(opts = {}) {
   const done = new Set();
   const found = [];
   const bankedObjectives = new Set();
+  let primaryFindings = 0, oppFindings = 0, controlViolations = 0;
 
   for (let ep = 1; ep <= episodes; ep++) {
     if (opts.stopRef?.stopped) { emit({ type: 'warn', msg: 'stopped by operator' }); break; }
@@ -86,9 +87,12 @@ export async function runCampaign(opts = {}) {
     if (allowOverride && smart?.orchestrator && ORCHESTRATORS[smart.orchestrator]) strategy = { ...strategy, orchestrator: smart.orchestrator };
     if (allowOverride && Array.isArray(smart?.converters)) strategy = { ...strategy, converterChain: smart.converters.filter((c) => CONVERTER_IDS.includes(c)) };
 
-    emit({ type: 'episode', ep, objective: strategy.objective, orchestrator: strategy.orchestrator,
-      converters: strategy.converterChain, plan: smart?.rationale ? `strategist${allowOverride ? '' : ' (advisory)'}: ${smart.rationale}` : `bandit → family ${family} · ${strategy.id}` });
-    for (const r of ranked.slice(0, 4)) emit({ type: 'plan', family: r.family, score: r.score === Infinity ? 1 : Math.max(0, Math.min(1, r.score / 2)), detail: `pulls ${r.pulls} wins ${r.wins}` });
+    emit({ type: 'episode', ep, objective: strategy.objective,
+      objectiveLabel: OBJECTIVES[strategy.objective]?.label, family,
+      strategyId: strategy.id, strategyTitle: strategy.title,
+      orchestrator: strategy.orchestrator, converters: strategy.converterChain,
+      ...(smart?.rationale ? { plan: `strategist${allowOverride ? '' : ' (advisory)'}: ${smart.rationale}` } : {}) });
+    ranked.slice(0, 4).forEach((r, i) => emit({ type: 'plan', family: r.family, rank: i + 1, picked: i === 0, pulls: r.pulls, wins: r.wins, detail: `pulls ${r.pulls} wins ${r.wins}` }));
 
     // ---- ATTACK + JUDGE ----
     const ctx = {
@@ -117,8 +121,9 @@ export async function runCampaign(opts = {}) {
       if (strategy.family === 'control') emit({ type: 'warn', msg: `CONTROL unexpectedly fired (${v.evidence}) — the target is weaker than expected` });
       emit({ type: 'verdict', hit: true, label: v.label, kind: v.kind, evidence: v.evidence });
       saveCandidate(strategy, result, found, bankedObjectives, emit);
+      if (strategy.family === 'control') controlViolations++; else primaryFindings++;
     } else {
-      emit({ type: 'verdict', hit: false, detail: `${strategy.objective} not leaked in ${result.turns.length} turn(s)` });
+      emit({ type: 'verdict', hit: false, status: 'HELD', detail: `${strategy.objective} not achieved in ${result.turns.length} turn${result.turns.length === 1 ? '' : 's'}` });
       const note = await brains.lesson({ objective: strategy.objective, transcript: result.turns.map((t) => `${t.user} → ${t.reply}`).join(' | ') }).catch(() => null);
       mem.lesson({ strategy: strategy.id, objective: strategy.objective, note: note || `held after ${result.turns.length} turns` });
       mem.journal(`MISS ${strategy.id} (${strategy.objective})`);
@@ -131,14 +136,21 @@ export async function runCampaign(opts = {}) {
       const pseudo = { ...strategy, id: `OPP-${obj}`, objective: obj, orchestrator: `opportunistic (while testing ${strategy.objective})`, converterChain: [], title: `Opportunistic — ${OBJECTIVES[obj]?.label}` };
       emit({ type: 'memory', msg: `opportunistic find: ${obj} (${hit.evidence})` });
       saveCandidate(pseudo, { hit: true, verdict: hit, turns: result.turns }, found, bankedObjectives, emit);
+      oppFindings++;
     }
     await sleep(delay);
   }
 
   // ---------- summary ----------
   emit({ type: 'phase', name: 'SUMMARY' });
-  for (const row of summarize(register, familiesOf(strategies))) emit({ type: 'info', msg: `${row.family.padEnd(16)} tries ${row.pulls}  wins ${row.wins}` });
-  emit({ type: 'info', msg: `candidates: ${found.length ? found.join(', ') : 'none this run'} → ${mem.paths.FINDINGS}/` });
+  emit({ type: 'info', msg: 'saved family history (across runs in this campaign):' });
+  for (const row of summarize(register, familiesOf(strategies)))
+    emit({ type: 'info', msg: `  ${row.family.padEnd(16)} attempts ${row.pulls}  primary hits ${row.wins}${row.family === 'control' ? '  (excluded from primary hits)' : ''}` });
+  emit({ type: 'info', msg: 'this run:' });
+  emit({ type: 'info', msg: `  candidates banked: ${found.length}` });
+  emit({ type: 'info', msg: `  breakdown: primary findings ${primaryFindings} · opportunistic findings ${oppFindings} · control violations ${controlViolations}` });
+  emit({ type: 'info', msg: `  candidate IDs: ${found.length ? found.join(', ') : 'none'}` });
+  if (found.length) emit({ type: 'info', msg: `  saved in: ${mem.paths.FINDINGS}/  (folder retains candidates across runs)` });
   emit({ type: 'info', msg: 'next: node verify.mjs  (reproduce 3× · gate · AIVSS · promote)' });
   return { found, register };
 }

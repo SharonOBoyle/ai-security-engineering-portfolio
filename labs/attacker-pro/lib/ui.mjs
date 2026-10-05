@@ -52,13 +52,22 @@ function render(e) {
   switch (e.type) {
     case 'phase':   console.log('\n  ' + c.inv(c.bold(` ${e.name} `)) + (e.note ? '  ' + c.dim(e.note) : '')); break;
     case 'recon':   console.log(`  ${stamp()} ${c.mag('recon')}   ${e.msg}`); break;
-    case 'episode': rule(); console.log(`  ${c.bold('episode ' + e.ep)}  ${c.dim('objective')} ${c.b(e.objective)}  ${c.dim('via')} ${c.y(e.orchestrator)}  ${c.dim('conv')} ${e.converters?.join('+') || 'none'}`);
+    case 'episode': rule();
+                    console.log(`  ${c.bold('episode ' + e.ep)}  ${c.dim('objective')} ${c.b(e.objective)}${e.objectiveLabel ? c.dim(' — ' + e.objectiveLabel) : ''}  ${c.dim('via')} ${c.y(e.orchestrator)}  ${c.dim('conv')} ${e.converters?.join('+') || 'none'}`);
+                    if (e.strategyId || e.strategyTitle) console.log(`  ${c.dim('strategy')} ${c.y(e.strategyId || '?')}${e.strategyTitle ? ' · ' + e.strategyTitle : ''}${e.family ? c.dim('  [family ' + e.family + ']') : ''}`);
                     if (e.plan) console.log(`  ${c.dim('plan   ')} ${e.plan}`); break;
-    case 'plan':    console.log(`  ${c.dim('bandit ')} ${e.family.padEnd(16)} ${bar(e.score)} ${c.dim(e.detail || '')}`); break;
+    case 'plan': {
+      if (e.rank == null) { console.log(`  ${c.dim('bandit ')} ${e.family.padEnd(16)} ${c.dim(e.detail || '')}`); break; }
+      const fam = e.family.padEnd(16);
+      const hist = c.dim(`history ${e.wins}/${e.pulls} primary hits`);
+      const tail = e.picked ? `${c.y('selected')} ${c.dim('·')} ${hist}` : `${' '.repeat(11)}${hist}`;
+      console.log(`  ${c.dim('planner rank ' + e.rank)} ${e.picked ? c.y('▶') : ' '} ${e.picked ? c.bold(fam) : fam} ${tail}`);
+      break;
+    }
     case 'say':     console.log(`    ${c.gray('→ you  ')} ${e.badge ? c.y('[' + e.badge + '] ') : ''}${clip(e.text, 96)}`); break;
     case 'reply':   console.log(`    ${c.gray('← tgt  ')} ${clip(e.text, 96)}`); break;
     case 'verdict': e.hit ? console.log(`  ${c.g('✓ HIT')}  ${c.bold(e.label)} ${c.dim('(' + e.kind + ': ' + clip(e.evidence, 60) + ')')}`)
-                          : console.log(`  ${c.y('✗ held')} ${c.dim(e.detail || '')}`); break;
+                          : console.log(`  ${c.y('✗ ' + (e.status || 'held'))} ${c.dim((e.status ? '— ' : '') + (e.detail || ''))}`); break;
     case 'rubric':  console.log(`  ${c.dim('rubric ')} ${e.agree ? c.g('agrees') : c.y('differs')} ${c.dim('— ' + clip(e.note, 72))}`); break;
     case 'memory':  console.log(`  ${c.gray('· ' + e.msg)}`); break;
     case 'verify':  console.log(`  ${c.dim(e.id.padEnd(18))} repro ${e.ok ? c.g(e.repro) : c.r(e.repro)}  ${c.dim(e.gate || '')}`); break;

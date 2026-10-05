@@ -73,7 +73,53 @@
         <div class="tab" data-pane="artifacts">Artifacts</div>
       </nav>
 
-      <div class="pane active" id="pane-live"><div id="stream"></div></div>
+      <div class="pane active" id="pane-live">
+        <details class="card legend">
+          <summary>How to read the live console</summary>
+          <div class="legend-body">
+            <p class="legend-intro">RedCell attacks a target AI over a series of <b>episodes</b> (one attempt each), then prints a summary.</p>
+
+            <h4>Each episode — one attack attempt</h4>
+            <dl>
+              <dt>objective</dt><dd>the banned behaviour being tested — a short code plus a plain description, e.g. <code>PCI — full card number read-back</code>.</dd>
+              <dt>strategy / family</dt><dd>the exact attack recipe used (ID + title), and the group of recipes it belongs to.</dd>
+              <dt>via / conv</dt><dd>how the messages are sequenced (single, slow build-up, branching…) / how they're disguised (<code>none</code> = sent as-is).</dd>
+            </dl>
+
+            <h4>Planner ranking — which family to try next</h4>
+            <dl>
+              <dt>planner rank / ▶</dt><dd>families ordered by what's most worth trying next — a <b>priority order, not</b> a success rate; <b>▶</b> marks the one chosen this episode.</dd>
+              <dt>history W/P</dt><dd>past results this campaign: <b>W</b> wins of <b>P</b> attempts. The order also favours less-tried families, so the best rate isn't always rank 1.</dd>
+            </dl>
+
+            <h4>The conversation</h4>
+            <dl>
+              <dt>→ you / ← tgt</dt><dd>the attacker's message / the target AI's reply.</dd>
+              <dt>[warm-up] [escalate] branch</dt><dd>the stage or variant of a multi-step attack a message belongs to.</dd>
+            </dl>
+
+            <h4>Did it work?</h4>
+            <dl>
+              <dt>✓ HIT / ✗ HELD</dt><dd>the attack reached its objective with hard evidence (still a <b>candidate</b> until verification reproduces it) / it didn't this episode.</dd>
+              <dt>canary / flag</dt><dd>the proof behind a HIT: a planted secret that should never appear / the target reporting a forbidden action.</dd>
+              <dt>opportunistic find</dt><dd>a <em>different</em> objective that leaked in the same reply, caught while testing another.</dd>
+            </dl>
+
+            <h4>End-of-run summary</h4>
+            <dl>
+              <dt>saved family history</dt><dd>per-family totals across all runs here — <b>attempts</b> tried and <b>primary hits</b> (main objective reached); control is excluded, so its hits stay 0 (0 is good).</dd>
+              <dt>candidates banked</dt><dd>findings saved this run, split into primary / opportunistic / control and listed by ID.</dd>
+            </dl>
+
+            <h4>Other labels</h4>
+            <dl>
+              <dt>brains …=code</dt><dd>optional LLM help is off; the deterministic fallback code is running.</dd>
+              <dt>started / finished · duration</dt><dd>when the run began and ended, and how long it took.</dd>
+            </dl>
+          </div>
+        </details>
+        <div id="stream"></div>
+      </div>
 
       <div class="pane" id="pane-findings"><div class="cards" id="cards"><div class="empty">No findings yet — run a campaign, then verify.</div></div></div>
 
