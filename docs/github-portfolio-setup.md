@@ -241,3 +241,18 @@ The idea is to make meaningful commits as the work develops, so the Git history 
 For example, a commit might capture a security hypothesis, an attack strategy, evidence criteria, or an improvement to an evaluator.
 
 This isn't necessary for the Git setup above — it's just an approach I'm trying for my own portfolio.
+
+## Provenance and upstream history
+
+This portfolio is maintained separately from the course source, following the `upstream` / `origin` convention described above:
+
+- **upstream** — the Engenious course repository, `engenious-inc/AI-Security-Engineer`.
+- **origin** — this portfolio repository (Sharon O'Boyle's `ai-security-engineering-portfolio`).
+
+The portfolio does not necessarily mirror upstream: course material is integrated selectively rather than wholesale.
+
+One such selective integration is recorded here for traceability:
+
+- Upstream commit `9e724414544a1c4d3a42d2a63dd7d9886fa0626f` ("ui changes and intake"), from the Engenious course repository, was cherry-picked into this portfolio.
+- It became portfolio commit `e9d2e66`.
+- That cherry-pick was made without `git cherry-pick -x`, so no `(cherry picked from commit …)` trailer was recorded on `e9d2e66`. The source commit SHA is documented here instead, rather than by rewriting existing Git history.
