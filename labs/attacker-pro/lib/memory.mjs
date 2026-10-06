@@ -43,6 +43,31 @@ export function loadAllFindings() {
   return [...live, ...rej];
 }
 
+// resolveLatest — collapse the findings/ + rejected/ records (which can hold two copies of one id, a stale
+// CONFIRMED in findings/ and a newer REJECTED in rejected/) down to ONE authoritative record per id: the one
+// with the newest effective timestamp (verifiedAt, else foundAt). A rejection always post-dates the
+// confirmation it overturns, so the newer verdict wins; on an exact tie a verified record beats an unverified
+// candidate so a same-instant candidate can never hide a confirmation. Pure — no I/O, safe to unit-test.
+const effectiveTs = (r) => r?.verifiedAt || r?.foundAt || '';
+function isAuthoritativeOver(r, prev) {
+  const a = effectiveTs(r), b = effectiveTs(prev);
+  if (a !== b) return a > b;
+  return Boolean(r?.verifiedAt) && !prev?.verifiedAt;   // tie → prefer the verified record
+}
+export function resolveLatest(records) {
+  const byId = new Map();
+  for (const r of records || []) {
+    if (!r || r.id == null) continue;
+    const prev = byId.get(r.id);
+    if (!prev || isAuthoritativeOver(r, prev)) byId.set(r.id, r);
+  }
+  return [...byId.values()];
+}
+
+// loadCurrentFindings — the authoritative current state per id, for REPORTING and COUNTS. loadAllFindings()
+// stays as-is for anything that genuinely wants every record on disk.
+export function loadCurrentFindings() { return resolveLatest(loadAllFindings()); }
+
 export function saveRegression(id, yaml) { ensure(); const p = join(REGRESSION, `${id}.gen.yaml`); writeFileSync(p, yaml); return p; }
 export function saveRedteam(yaml) { ensure(); const p = join(REDTEAM, 'redteam.yaml'); writeFileSync(p, yaml); return p; }
 export function saveReport(name, md) { ensure(); const p = join(REPORT, name); writeFileSync(p, md); return p; }

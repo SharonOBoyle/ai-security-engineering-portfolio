@@ -13,7 +13,7 @@ import { banner, c } from './lib/ui.mjs';
 
 const info = pickAdapter().info();
 const url = /^https?:/.test(info.url) ? info.url : (process.env.MERCI_TARGET_URL || 'http://localhost:8080/v1/chat/completions');
-const confirmed = mem.loadAllFindings().filter((f) => f.status === 'CONFIRMED');
+const confirmed = mem.loadCurrentFindings().filter((f) => f.status === 'CONFIRMED');
 
 banner('RedCell — RED-TEAM', `scoped to ${confirmed.length} confirmed objective(s)`);
 if (!confirmed.length) { console.log(c.y('\n  No confirmed findings — run attack.mjs + verify.mjs first (the config scopes to what is proven).\n')); process.exit(0); }

@@ -33,6 +33,7 @@ export async function runCampaign(opts = {}) {
   emit({ type: 'phase', name: 'WAKE', note: `adapter=${adapterName}` });
   const target = pickAdapter(adapterName, opts.adapterOpts);
   const info = target.info();
+  const targetInfo = { adapter: adapterName, name: info.name, url: info.url };
   emit({ type: 'info', msg: `target: ${info.name} (${info.url})` });
   if (target.health) {
     try { const h = await target.health(); emit({ type: 'info', msg: `health ok · model=${h.model || '?'} · key=${h.hasKey ? 'set' : 'MISSING'}` });
@@ -120,7 +121,7 @@ export async function runCampaign(opts = {}) {
       const v = result.verdict;
       if (strategy.family === 'control') emit({ type: 'warn', msg: `CONTROL unexpectedly fired (${v.evidence}) — the target is weaker than expected` });
       emit({ type: 'verdict', hit: true, label: v.label, kind: v.kind, evidence: v.evidence });
-      saveCandidate(strategy, result, found, bankedObjectives, emit);
+      saveCandidate(strategy, result, found, bankedObjectives, emit, targetInfo);
       if (strategy.family === 'control') controlViolations++; else primaryFindings++;
     } else {
       emit({ type: 'verdict', hit: false, status: 'HELD', detail: `${strategy.objective} not achieved in ${result.turns.length} turn${result.turns.length === 1 ? '' : 's'}` });
@@ -135,7 +136,7 @@ export async function runCampaign(opts = {}) {
       if (obj === strategy.objective || bankedObjectives.has(obj)) continue;
       const pseudo = { ...strategy, id: `OPP-${obj}`, objective: obj, orchestrator: `opportunistic (while testing ${strategy.objective})`, converterChain: [], title: `Opportunistic — ${OBJECTIVES[obj]?.label}` };
       emit({ type: 'memory', msg: `opportunistic find: ${obj} (${hit.evidence})` });
-      saveCandidate(pseudo, { hit: true, verdict: hit, turns: result.turns }, found, bankedObjectives, emit);
+      saveCandidate(pseudo, { hit: true, verdict: hit, turns: result.turns }, found, bankedObjectives, emit, targetInfo);
       oppFindings++;
     }
     await sleep(delay);
@@ -162,7 +163,7 @@ function objectiveRank(profile, strategies, family) {
   return 99 - best; // earlier in prioritize → higher rank
 }
 
-function saveCandidate(strategy, result, found, banked, emit) {
+function saveCandidate(strategy, result, found, banked, emit, targetInfo) {
   const o = OBJECTIVES[strategy.objective] || {};
   const finding = {
     id: strategy.id, status: 'CANDIDATE', title: strategy.title, objective: strategy.objective,
@@ -170,6 +171,8 @@ function saveCandidate(strategy, result, found, banked, emit) {
     owaspLLM: o.owaspLLM, owaspASI: o.owaspASI, impact: o.impact, aivssInputs: o.aivss,
     evidence: result.verdict.evidence, evidenceKind: result.verdict.kind, foundAt: new Date().toISOString(),
     turnsToHit: result.turns.length,
+    // target provenance: which adapter/name/URL this campaign ran against (findings/ is shared across targets).
+    ...(targetInfo ? { target: targetInfo } : {}),
     transcript: result.turns.map((t) => ({ user: t.user, reply: t.reply, toolCalls: t.toolCalls, retrieved: t.retrieved, findingsHint: t.findingsHint })),
     evidence_ladder: 'claimed',
   };

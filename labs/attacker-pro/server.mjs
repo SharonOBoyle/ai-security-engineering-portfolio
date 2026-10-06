@@ -83,14 +83,14 @@ const server = createServer(async (req, res) => {
         profile: mem.loadProfile(), counts: countFindings(),
       });
     }
-    if (p === '/api/findings') return sendJson(res, { findings: mem.loadAllFindings() });
+    if (p === '/api/findings') return sendJson(res, { findings: mem.loadCurrentFindings() });
     if (p === '/api/promptfoo/status') {
       const up = await fetch('http://localhost:15500/').then((r) => r.ok).catch(() => false);
       return sendJson(res, { up, url: 'http://localhost:15500' });
     }
     if (p === '/api/report') {
       const audience = url.searchParams.get('audience') || 'developer';
-      const fs = mem.loadAllFindings();
+      const fs = mem.loadCurrentFindings();
       const md = audience === 'stakeholder' ? await stakeholderReport(fs, { brain: brains.available('report') }) : await developerReport(fs, { brain: brains.available('report') });
       return sendJson(res, { audience, md });
     }
@@ -113,7 +113,7 @@ const server = createServer(async (req, res) => {
       if (p === '/api/verify') return sendJson(res, await startVerify(o));
       if (p === '/api/stop') { run.stopRef.stopped = true; return sendJson(res, { ok: true }); }
       if (p === '/api/report/build') {
-        const fs = mem.loadAllFindings();
+        const fs = mem.loadCurrentFindings();
         mem.saveReport('developer.md', await developerReport(fs, { brain: brains.available('report') }));
         mem.saveReport('stakeholder.md', await stakeholderReport(fs, { brain: brains.available('report') }));
         return sendJson(res, { ok: true });
@@ -159,7 +159,7 @@ function runPromptfooEval(id) {
 }
 
 function countFindings() {
-  const all = mem.loadAllFindings();
+  const all = mem.loadCurrentFindings();
   return { total: all.length, confirmed: all.filter((f) => f.status === 'CONFIRMED').length,
     rejected: all.filter((f) => f.status === 'REJECTED').length, candidate: all.filter((f) => f.status === 'CANDIDATE').length };
 }
